@@ -1,0 +1,40 @@
+#!/usr/bin/env sh
+set -eu
+
+branch="$(git symbolic-ref --short HEAD 2>/dev/null || true)"
+if [ "$branch" = "main" ] || [ "$branch" = "master" ]; then
+  echo "Push blocked: direct push to main/master requires an approved pull request." >&2
+  exit 1
+fi
+
+node - <<'NODE'
+const fs = require('fs')
+const allowed = new Set([
+  'express',
+  'cors',
+  'dotenv',
+  'better-sqlite3',
+  'react',
+  'react-dom',
+  '@vitejs/plugin-react',
+  'vite',
+  'tailwindcss',
+  'lucide-react',
+  'oxlint',
+])
+
+for (const file of ['backend/package.json', 'frontend/package.json']) {
+  if (!fs.existsSync(file)) continue
+  const pkg = JSON.parse(fs.readFileSync(file, 'utf8'))
+  const dependencies = [
+    ...Object.keys(pkg.dependencies || {}),
+    ...Object.keys(pkg.devDependencies || {}),
+  ]
+  for (const dependency of dependencies) {
+    if (!allowed.has(dependency)) {
+      console.error(`Push blocked: unapproved package dependency: ${dependency}`)
+      process.exit(1)
+    }
+  }
+}
+NODE
