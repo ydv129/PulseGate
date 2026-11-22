@@ -1,5 +1,30 @@
+# Environment and secrets
 .env
+.env.*
+!.env.example
+
+# Databases
 pulsegate.db
+*.db
+*.db-shm
+*.db-wal
+
+# Dependencies
 node_modules/
+
+# Builds and coverage
+dist/
 frontend/dist/
+build/
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Editor and OS files
 .DS_Store
+.vscode/
+.idea/

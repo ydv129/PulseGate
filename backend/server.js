@@ -1,5 +1,9 @@
 import express from 'express'
 import { env } from './config/env.js'
+import routes from './routes/index.js'
+import { db } from './db/database.js'
+import { closeSseClients } from './services/stream.service.js'
+import { errorHandler } from './middleware/errorHandler.js'
 
 const app = express()
 
@@ -14,13 +18,8 @@ app.get('/api/health', (_request, response) => {
   })
 })
 
-app.use((error, _request, response, _next) => {
-  console.error(error)
-  response.status(error.status || 500).json({
-    ok: false,
-    error: error.message || 'Internal server error',
-  })
-})
+app.use(routes)
+app.use(errorHandler)
 
 const server = app.listen(env.port, () => {
   console.log(`PulseGate backend listening on port ${env.port}`)
@@ -35,8 +34,14 @@ async function gracefulShutdown(signal) {
   shuttingDown = true
   console.log(`Received ${signal}; shutting down`)
 
+  closeSseClients()
   server.close((error) => {
     if (error) {
+      console.error(error)
+    }
+    try {
+      db.close()
+    } catch (error) {
       console.error(error)
     }
     process.exit(0)
