@@ -1,121 +1,124 @@
 import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import {
+  Activity,
+  ClipboardCheck,
+  Inbox,
+  RefreshCw,
+  Radio,
+} from 'lucide-react'
+import Topics from './components/Topics.jsx'
+import Triage from './components/Triage.jsx'
+import Replay from './components/Replay.jsx'
+import LiveFeed from './components/LiveFeed.jsx'
+import ReviewerSwitcher from './components/ReviewerSwitcher.jsx'
+import './index.css'
+
+const NAV_ITEMS = [
+  { id: 'topics', label: 'Topics', icon: Inbox },
+  { id: 'triage', label: 'Triage', icon: ClipboardCheck },
+  { id: 'events', label: 'Events', icon: Activity },
+  { id: 'replay', label: 'Replay', icon: RefreshCw },
+  { id: 'live', label: 'Live feed', icon: Radio },
+]
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [view, setView] = useState('topics')
+  const [reviewedEvents, setReviewedEvents] = useState([])
+  const [liveEvents, setLiveEvents] = useState([])
+
+  function handleReview(event) {
+    setReviewedEvents((current) => [event, ...current].slice(0, 100))
+  }
+
+  function handleLiveEvent(event) {
+    setLiveEvents((current) => [event, ...current].slice(0, 100))
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="app-shell">
+      <aside className="sidebar">
+        <div className="brand">PulseGate</div>
+        <nav className="nav-list" aria-label="Dashboard views">
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon
+            return (
+              <button
+                key={item.id}
+                type="button"
+                className={view === item.id ? 'nav-item active' : 'nav-item'}
+                onClick={() => setView(item.id)}
+              >
+                <Icon size={18} strokeWidth={1.75} aria-hidden="true" />
+                <span>{item.label}</span>
+              </button>
+            )
+          })}
+        </nav>
+      </aside>
 
-      <div className="ticks"></div>
+      <main className="main-shell">
+        <header className="topbar">
+          <div>
+            <p className="eyebrow">Verified web-to-event broker</p>
+            <h1>{NAV_ITEMS.find((item) => item.id === view)?.label}</h1>
+          </div>
+          <ReviewerSwitcher />
+        </header>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        <section className="content">
+          {view === 'topics' && <Topics />}
+          {view === 'triage' && (
+            <Triage onReviewed={handleReview} onLiveEvent={handleLiveEvent} />
+          )}
+          {view === 'events' && (
+            <EventsView reviewedEvents={reviewedEvents} liveEvents={liveEvents} />
+          )}
+          {view === 'replay' && <Replay />}
+          {view === 'live' && <LiveFeed onLiveEvent={handleLiveEvent} />}
+        </section>
+      </main>
+    </div>
+  )
+}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+function EventsView({ reviewedEvents, liveEvents }) {
+  const eventMap = new Map()
+  for (const event of [...reviewedEvents, ...liveEvents]) {
+    eventMap.set(event.event_id, event)
+  }
+  const events = [...eventMap.values()].slice(0, 100)
+
+  return (
+    <div className="page-stack">
+      <div className="section-heading">
+        <h2>Recent events</h2>
+        <span className="count-badge">{events.length}</span>
+      </div>
+      {events.length === 0 ? (
+        <div className="empty-state">Approve, reject, or receive an event to populate this view.</div>
+      ) : (
+        <div className="event-list">
+          {events.map((event) => (
+            <article className="card event-card" key={event.event_id}>
+              <div className="card-header">
+                <span className="status-badge">
+                  {event.status || event.approval_status || event.verified_status}
+                </span>
+                <span className="mono timestamp">{event.created_at || ''}</span>
+              </div>
+              <h3>{event.title}</h3>
+              {event.summary && <p>{event.summary}</p>}
+              <div className="meta-row">
+                <span className="mono">{event.event_id}</span>
+                {event.reviewed_by && (
+                  <span className="mono">reviewed by {event.reviewed_by}</span>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }
 
