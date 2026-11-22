@@ -120,6 +120,17 @@ db.exec(`
     key TEXT PRIMARY KEY,
     value TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS webhook_deliveries (
+    delivery_id TEXT PRIMARY KEY,
+    event_id TEXT,
+    topic_id TEXT,
+    webhook_url TEXT,
+    status TEXT DEFAULT 'pending',
+    attempts INTEGER DEFAULT 0,
+    last_error TEXT,
+    created_at TEXT
+  );
 `)
 
 export function getDb() {
